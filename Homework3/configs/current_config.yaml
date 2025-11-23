@@ -1,0 +1,43 @@
+dataset:
+  name: CIFAR100
+  data_dir: ./data
+  image_size: 32
+  num_workers: 3
+  augmentations:
+    random_horizontal_flip: true
+    random_crop: true
+    color_jitter: false
+    random_erasing: true
+model:
+  name: resnest26d
+  pretrained: false
+  num_classes: 100
+optimizer:
+  name: SGD
+  lr: 0.0003 #0.0003
+  weight_decay: 0.005
+  momentum: 0.99
+  nesterov: true
+scheduler:
+  name: StepLR
+  step_size: 20
+  factor: 0.3
+  patience: 5
+training:
+  epochs: 80
+  batch_size: 64 #128
+  val_batch_size: 500
+  batch_size_scheduler:
+    policy: linear_increase
+    max_batch_size: 128
+    start_epoch: 30
+    end_epoch: 80
+    step: 10
+  device: auto
+  early_stopping:
+    monitor: accuracy
+    patience: 10
+wandb:
+  project: example-pipeline
+  entity: null
+  tags: [cifar100, resnest26d]

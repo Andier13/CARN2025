@@ -1,0 +1,28 @@
+method: bayes
+metric:
+  name: 'Validation accuracy'
+  goal: maximize
+
+parameters:
+
+  optimizer:
+#    name:
+#      values: [ "AdamW", "SGD" ]
+    lr:
+      min: 0.00001
+      max: 0.0005
+    weight_decay:
+      min: 0.0001
+      max: 0.05
+    momentum:
+      min: 0.95
+      max: 0.999
+
+  scheduler:
+    step_size:
+      min: 10
+      max: 25
+    factor:
+      min: 0.01
+      max: 0.4
+
