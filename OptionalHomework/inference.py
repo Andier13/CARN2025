@@ -2,6 +2,7 @@ from multiprocessing import freeze_support
 from timed_decorator.simple_timed import timed
 
 import torch
+import wandb
 from torch import nn
 from torchvision.transforms import v2
 from torch.utils.data import DataLoader, TensorDataset
@@ -47,14 +48,39 @@ def test_inference_time(model: nn.Module, device: torch.device, batch_size: int,
           f"Using a model with batch_size: {batch_size} took {t2}s on {device.type}. \n")
     return t1, t2
 
+sweep_config = {
+    "method": "bayes",
+    "metric": {"name": "inference_time", "goal": "minimize"},
+    "parameters": {
+        "batch_size": {"values": [1, 4, 8, 16, 32, 64, 128]},
+        "num_workers": {"values": [0, 2, 4]},
+        "pin_memory": {"values": [True, False]},
+    },
+}
 
-def main():
+def run_inference_sweep():
+    wandb.init()
+    cfg = wandb.config
+
+    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cpu")
     model = load_model()
-    test_inference_time(model, torch.device("cpu"), batch_size=64, num_workers=0, pin_memory=True)
-    test_inference_time(model, torch.device("cuda"), batch_size=64, num_workers=0, pin_memory=True)
+
+    sequential_time, inference_time = test_inference_time(
+        model=model,
+        batch_size=cfg.batch_size,
+        device=device,
+        num_workers=cfg.num_workers,
+        pin_memory=cfg.pin_memory,
+    )
+
+    wandb.log({
+        "sequential_time": sequential_time,
+        "inference_time": inference_time,
+    })
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     freeze_support()
-    main()
+    sweep_id = wandb.sweep(sweep_config, project="inference-speed-test")
+    wandb.agent(sweep_id, function=run_inference_sweep, count=20)
